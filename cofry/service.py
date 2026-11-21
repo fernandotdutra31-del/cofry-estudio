@@ -62,7 +62,8 @@ def work(queue, settings, stop):
                 else:
                     queue.deleted(row["id"], retry=False)
             else:
-                process(row, queue, settings, stop)
+                with media.MEDIA_SLOT:
+                    process(row, queue, settings, stop)
         except Exception as exc:
             LOG.error("Falha na fila de processamento (%s).", type(exc).__name__)
             # An infrastructure error can interrupt the durable transition.
@@ -76,15 +77,21 @@ def work(queue, settings, stop):
 def process(row, queue, settings, stop):
     job = Job.model_validate_json(row["request"])
     job_id = job.job_id
+    is_studio = studio_job(job)
+    last_progress = time.monotonic()
 
     def check():
         if stop.is_set() or queue.get(job_id)["state"] != "running":
             raise Cancelled
+        if is_studio and time.monotonic() - last_progress > 900:
+            raise Problem("O processamento travou. Tente de novo.")
 
     def progress(stage, percent):
+        nonlocal last_progress
         check()
         LOG.info("job=%s etapa=%s progresso=%s", job_id, stage, percent)
         queue.progress(job_id, stage, percent)
+        last_progress = time.monotonic()
 
     error, clips, words, duration, fingerprint = None, None, None, None, None
     try:
@@ -92,7 +99,7 @@ def process(row, queue, settings, stop):
         progress("baixando", 4)
         with tempfile.TemporaryDirectory(prefix="task-", dir=settings.data) as directory:
             folder = Path(directory)
-            if studio_job(job) and job.video_url == ORIGIN + job_id:
+            if is_studio and job.video_url == ORIGIN + job_id:
                 source = folder / "source.media"
                 try:
                     source.hardlink_to(settings.data / "studio-inbox" / job_id)
@@ -136,7 +143,7 @@ def process(row, queue, settings, stop):
                     if progress_file.exists():
                         percent = 27 + round(int(progress_file.read_text()) * 0.20)
                         if percent > last_percent:
-                            queue.progress(job_id, "transcrevendo", percent)
+                            progress("transcrevendo", percent)
                             last_percent = percent
 
                 media.run([sys.executable, str(TRANSCRIBER), settings.whisper,
@@ -148,12 +155,12 @@ def process(row, queue, settings, stop):
                     raise Problem("Não encontramos fala no áudio deste vídeo.")
                 clips = selection.select(
                     words, job.options, duration, settings, check, progress,
-                    offline=studio_job(job) and not settings.llm_key,
-                ) if studio_job(job) else selection.select(words, job.options, duration, settings, check, progress)
+                    offline=not settings.llm_key,
+                ) if is_studio else selection.select(words, job.options, duration, settings, check, progress)
                 for index, clip in enumerate(clips, 1):
                     clip["id"] = f"corte-{index}"
                 to_render = clips
-            storage = LocalStorage(settings.data) if studio_job(job) and not settings.studio_s3 else Storage()
+            storage = LocalStorage(settings.data) if is_studio and not settings.studio_s3 else Storage()
             for index, clip in enumerate(to_render):
                 check()
                 progress("renderizando", 66 + int(30 * index / len(to_render)))

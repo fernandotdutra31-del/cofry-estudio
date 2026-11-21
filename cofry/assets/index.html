@@ -3,37 +3,116 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#111019">
+  <meta name="theme-color" content="#0B0614">
   <meta name="description" content="Estúdio Cofry para transformar vídeos longos em cortes com gancho e legenda.">
   <link rel="icon" href="/studio/assets/icon.png">
+  <link rel="apple-touch-icon" href="/studio/assets/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap">
   <link rel="manifest" href="/studio/assets/manifest.webmanifest">
   <link rel="stylesheet" href="/studio/assets/style.css">
   <title>Cofry · Estúdio de cortes</title>
   <script type="module" src="/studio/assets/app.js"></script>
 </head>
 <body>
+  <svg xmlns="http://www.w3.org/2000/svg" class="icon-library" aria-hidden="true">
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 21v-7h6v7"/></symbol>
+    <symbol id="i-cut" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.12 8.12 12 12m8-8L8.12 15.88M14 14l6 6"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4l2 3h10a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2Z"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/><circle cx="9" cy="7" r="4"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 8h4m-4 8h4m10 0h4m-4-8h4"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12a2 2 0 0 0 4 0"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.2 2h-.4a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7 2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.73.73l-.2.35a2 2 0 0 0 .73 2.73l.2.1a2 2 0 0 1 1 1.74v.2a2 2 0 0 1-1 1.74l-.2.1a2 2 0 0 0-.73 2.73l.2.35a2 2 0 0 0 2.73.73l.2-.1a2 2 0 0 1 2 0 2 2 0 0 1 1 1.7v.2a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7 2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.73-.73l.2-.35a2 2 0 0 0-.73-2.73l-.2-.1a2 2 0 0 1-1-1.74v-.2a2 2 0 0 1 1-1.74l.2-.1a2 2 0 0 0 .73-2.73l-.2-.35a2 2 0 0 0-2.73-.73l-.2.1a2 2 0 0 1-2 0 2 2 0 0 1-1-1.7V4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-7-7 7 7-7 7"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m-5 5 5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><path d="M4 6v14m5-16v16m5-15v15m3-13 4 13"/></symbol>
+  </svg>
   <header class="bar">
-    <a class="wordmark" href="/studio"><img src="/studio/assets/icon.png" alt="">Cofry</a>
-    <nav aria-label="Estúdio"><a href="#novo">Novo corte</a><a href="#projetos">Meus projetos</a></nav>
-    <button id="logout" class="quiet" type="button" hidden>Sair</button>
+    <div class="brand-row">
+      <button id="menu-toggle" class="icon-button" type="button" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false" hidden><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+      <a class="wordmark" href="/studio#inicio"><img src="/studio/assets/icon.png" alt="">Cofry</a>
+      <span class="bar-divider"></span><span id="bar-location" class="bar-location">Estúdio</span>
+    </div>
+    <div id="bar-actions" class="bar-actions" hidden>
+      <a id="header-notifications" class="icon-button" href="#notificacoes" aria-label="Notificações" hidden><svg class="icon" aria-hidden="true"><use href="#i-bell"/></svg><span id="notification-badge" class="notification-badge" hidden></span></a>
+      <a class="quiet library" href="#projetos" aria-label="Biblioteca"><svg class="icon" aria-hidden="true"><use href="#i-library"/></svg><span>Biblioteca</span></a>
+      <details id="account-menu" class="account-menu">
+        <summary class="avatar" id="initials" aria-label="Menu da conta">CF</summary>
+        <div class="account-popover">
+          <strong data-account-name>Proprietário</strong>
+          <p data-account-email class="small" hidden></p>
+          <a href="#configuracoes">Configurações</a>
+          <button id="logout" class="quiet" type="button" hidden>Sair</button>
+        </div>
+      </details>
+    </div>
   </header>
-  <main>
-    <section class="intro" id="novo">
-      <div class="intro-copy"><span class="tag">ESTÚDIO DE CORTES</span><h1>Seu próximo<br>melhor <em>corte.</em></h1><p>Transforme vídeos longos em cortes com gancho, legendas e capa, prontos para Reels, TikTok e Shorts.</p></div>
-      <div class="art" aria-hidden="true"><div class="film"></div><div class="wave" id="wave"></div><div class="playhead"></div><div class="track"><i></i><i></i><i></i></div></div>
+  <button id="nav-scrim" type="button" aria-label="Fechar menu" class="nav-scrim" hidden></button>
+  <aside id="sidebar" class="sidebar" hidden>
+    <nav class="sidebar-nav" aria-label="Menu principal">
+      <a href="#inicio" data-route="inicio" title="Início"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg><span>Início</span></a>
+      <a href="#novo" data-route="novo" title="Estúdio de Cortes"><svg class="icon" aria-hidden="true"><use href="#i-cut"/></svg><span>Estúdio de Cortes</span></a>
+      <a href="#projetos" data-route="projetos" title="Projetos"><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg><span>Projetos</span></a>
+      <a href="#agenda" data-route="agenda" title="Agenda"><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg><span>Agenda</span></a>
+      <a href="#contas" data-route="contas" title="Contas"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg><span>Contas</span></a>
+      <a href="#geracao" data-route="geracao" title="Imagens e Vídeos"><svg class="icon" aria-hidden="true"><use href="#i-film"/></svg><span>Imagens e Vídeos</span></a>
+      <a href="#notificacoes" data-route="notificacoes" title="Notificações" data-owner-only hidden><svg class="icon" aria-hidden="true"><use href="#i-bell"/></svg><span>Notificações</span></a>
+      <a href="#configuracoes" data-route="configuracoes" title="Configurações"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg><span>Configurações</span></a>
+    </nav>
+    <div id="sidebar-credits" class="credits-card" hidden>
+      <span class="small">Créditos do proprietário</span><strong id="credit-balance">Ilimitado</strong>
+    </div>
+  </aside>
+  <main id="main-content">
+    <section id="entry" class="entry">
+      <div class="entry-intro">
+        <h1>Seu próximo melhor <em>corte.</em></h1>
+        <p>Transforme vídeos longos em cortes com gancho, legendas e capa, prontos para Reels, TikTok e Shorts.</p>
+        <div class="art" aria-hidden="true"><div class="film"></div><div class="wave" data-wave></div><div class="playhead"></div><div class="track"><i></i><i></i><i></i></div></div>
+      </div>
+      <div class="card login">
+        <div><h2>Entre no estúdio</h2><p id="login-copy">Use sua chave de acesso para continuar.</p></div>
+        <a id="google-login" class="primary login-google" href="/studio/auth/google" hidden>Continuar com Google</a>
+        <form id="login">
+          <label>Chave do estúdio<input id="key" type="password" autocomplete="current-password" required></label>
+          <button class="primary">Entrar</button>
+        </form>
+        <p class="error" id="login-error" role="alert"></p>
+      </div>
     </section>
-    <form id="login" class="card login">
-      <div><h2>Entre no estúdio</h2><p>Use a chave de acesso configurada no servidor.</p></div>
-      <label>Chave do estúdio<input id="key" type="password" autocomplete="current-password" required></label>
-      <button class="primary">Entrar</button><p class="error" id="login-error" role="alert"></p>
-    </form>
     <div id="workspace" hidden>
+      <div id="demo-banner" class="demo-banner" role="status" hidden><strong>Demonstração</strong><span id="demo-description"></span></div>
+      <section class="view" id="panel-inicio" data-panel="inicio" aria-labelledby="home-title">
+        <div class="section-head page-head"><div><h1 id="home-title">Início</h1><p>Acompanhe seus projetos e retome de onde parou.</p></div></div>
+        <div class="dashboard-hero">
+          <div><h2>Seu próximo melhor <em>corte.</em></h2><p>Envie um vídeo longo e transforme os melhores trechos em conteúdo pronto para postar.</p>
+          <a class="primary" href="#novo"><svg class="icon" aria-hidden="true"><use href="#i-cut"/></svg> Criar cortes</a></div>
+          <div class="art" aria-hidden="true"><div class="film"></div><div class="wave" id="wave" data-wave></div><div class="playhead"></div><div class="track"><i></i><i></i><i></i></div></div>
+        </div>
+        <div class="metrics" aria-label="Indicadores do estúdio">
+          <article class="card metric"><span class="metric-icon"><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg></span><div><strong id="metric-projects">—</strong><span>Projetos</span></div></article>
+          <article class="card metric"><span class="metric-icon"><svg class="icon" aria-hidden="true"><use href="#i-cut"/></svg></span><div><strong id="metric-clips">—</strong><span>Cortes gerados</span></div></article>
+          <article class="card metric"><span class="metric-icon"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg></span><div><strong id="metric-active">—</strong><span>Em processamento</span></div></article>
+        </div>
+        <section class="card recent">
+          <div class="section-head"><h2>Projetos recentes</h2><a href="#projetos" class="quiet">Ver biblioteca</a></div>
+          <p id="recent-message" class="small" aria-live="polite">Carregando projetos…</p>
+          <ul id="recent-projects" class="recent-list"></ul>
+        </section>
+      </section>
+      <section class="view" id="panel-novo" data-panel="novo" aria-labelledby="cuts-title" hidden>
+        <div class="section-head page-head"><div><h1 id="cuts-title">Estúdio de Cortes</h1><p>Escolha a origem do vídeo e ajuste como seus cortes serão gerados.</p></div></div>
       <form id="job" class="columns">
         <section class="card source">
           <div class="section-head"><div><h2>Vídeo de origem</h2><p>Use um arquivo ou informe um link HTTPS.</p></div></div>
           <div class="tabs" role="group" aria-label="Origem"><button id="file-tab" type="button" aria-pressed="true">Enviar arquivo</button><button id="url-tab" type="button" aria-pressed="false">Usar link</button></div>
-          <label id="drop" class="drop" tabindex="0"><input type="file" id="file" accept="video/*,.mkv" hidden><span class="upload-icon" aria-hidden="true">↑</span><strong id="filename">Arraste seu vídeo aqui</strong><span id="limits">Ou clique para escolher um arquivo · mínimo 2 minutos</span></label>
+          <label id="drop" class="drop" tabindex="0"><input type="file" id="file" accept="video/*,.mkv" hidden><span class="upload-icon" aria-hidden="true"><svg class="icon"><use href="#i-upload"/></svg></span><strong id="filename">Arraste seu vídeo aqui</strong><span id="limits">Ou clique para escolher um arquivo · mínimo 2 minutos</span></label>
           <div id="url-panel" hidden><label>Link do vídeo<input id="url" type="url" placeholder="https://…" maxlength="12000"></label><p id="link-help" class="small"></p></div>
+          <label class="rights"><input id="video-rights" type="checkbox" required> Confirmo que tenho os direitos ou autorização para usar este vídeo</label>
           <div id="upload-status" aria-live="polite"></div>
         </section>
         <section class="card settings">
@@ -48,13 +127,145 @@
             <div class="pair"><label>A partir de (s)<input name="trecho_inicio" type="number" min="0" step=".01" value="0"></label><label>Até (s)<input name="trecho_fim" type="number" min="0" step=".01" placeholder="Fim do vídeo"></label></div>
             <div class="checks"><label><input type="checkbox" name="gancho" checked> Gancho inicial</label><label><input type="checkbox" name="seguir_rosto"> Seguir rosto</label><label><input type="checkbox" name="manchete"> Manchete</label></div>
           </details>
-          <button class="primary" id="generate">Gerar cortes</button>
+          <p id="generation-paused" class="small" hidden>As gerações estão pausadas. <a href="#configuracoes">Abrir configurações</a></p>
+          <button class="primary" id="generate" disabled>Gerar cortes</button>
           <p id="job-error" class="error" role="alert"></p>
         </section>
       </form>
-      <section id="projetos" class="projects"><h2>Meus projetos</h2><p id="projects-message" aria-live="polite"></p><div id="projects-list"></div></section>
+      </section>
+      <section class="view projects" id="panel-projetos" data-panel="projetos" aria-labelledby="projects-title" hidden>
+        <div class="section-head page-head"><div><h1 id="projects-title">Meus projetos</h1><p>Veja o andamento, baixe os cortes prontos ou volte à edição.</p></div><a href="#novo" class="quiet">Novo projeto</a></div>
+        <div class="filters" role="search" aria-label="Buscar projetos">
+          <label>Buscar projeto<input type="search" id="project-search" placeholder="Digite o título"></label>
+          <label>Status<select id="project-filter"><option value="">Todos</option><option value="active">Em processamento</option><option value="ready">Com cortes prontos</option><option value="failed">Com falha</option></select></label>
+        </div>
+        <p id="projects-message" aria-live="polite"></p><div id="projects-list"></div>
+      </section>
+      <section class="view" id="panel-agenda" data-panel="agenda" aria-labelledby="agenda-title" hidden>
+        <div class="section-head page-head"><div><h1 id="agenda-title">Agenda</h1><p>Programação dos cortes no horário de Brasília.</p></div><button id="schedule-new" class="quiet" type="button">Agendar corte</button></div>
+        <p id="agenda-demo" class="demo-banner" hidden><strong>Demonstração</strong> Os agendamentos de teste ficam no Cofry.</p>
+        <div class="metrics agenda-metrics" aria-label="Indicadores de publicações">
+          <article class="card metric"><div><strong id="post-total">—</strong><span>Total</span></div></article>
+          <article class="card metric"><div><strong id="post-pending">—</strong><span>Agendados</span></div></article>
+          <article class="card metric"><div><strong id="post-done">—</strong><span>Publicados</span></div></article>
+          <article class="card metric"><div><strong id="post-failed">—</strong><span>Falhas</span></div></article>
+        </div>
+        <div class="social-grid">
+          <section class="card calendar" aria-labelledby="calendar-heading">
+            <div class="section-head calendar-head"><button type="button" id="month-prev" class="quiet" aria-label="Mês anterior">‹</button><h2 id="calendar-heading">Calendário</h2><button type="button" id="month-next" class="quiet" aria-label="Próximo mês">›</button></div>
+            <div id="calendar-grid" class="calendar-grid"></div>
+            <p id="calendar-date-filter" class="calendar-filter small" hidden><span id="calendar-selected"></span> <button type="button" id="clear-day" class="quiet">Ver todos os dias</button></p>
+          </section>
+          <section class="card post-history" aria-labelledby="history-title">
+            <h2 id="history-title">Histórico</h2>
+            <div class="filters post-filters" role="search" aria-label="Buscar publicações">
+              <label>Buscar<input id="post-search" type="search" placeholder="Digite a legenda"></label>
+              <label>Rede<select id="post-platform"><option value="">Todas</option><option value="instagram">Instagram</option><option value="tiktok">TikTok</option><option value="youtube">YouTube</option></select></label>
+              <label>Status<select id="post-status"><option value="">Todos</option><option value="scheduled">Agendado</option><option value="published">Publicado</option><option value="failed">Falha</option><option value="cancelled">Cancelado</option></select></label>
+            </div>
+            <p id="history-message" class="small" role="status"></p><ul id="post-list" class="post-list"></ul>
+          </section>
+        </div>
+      </section>
+      <section class="view" id="panel-contas" data-panel="contas" aria-labelledby="accounts-title" hidden>
+        <div class="section-head page-head"><div><h1 id="accounts-title">Contas</h1><p>Instagram, TikTok e YouTube.</p></div></div>
+        <p id="accounts-demo" class="demo-banner" hidden><strong>Demonstração</strong> Estas contas servem para testar o agendamento.</p>
+        <p id="accounts-message" class="small" role="status"></p><div id="social-accounts" class="social-accounts"></div>
+        <p class="small accounts-help">As contas reais são gerenciadas no <a class="text-link" href="https://zernio.com" target="_blank" rel="noopener noreferrer">Zernio</a>.</p>
+      </section>
+      <section class="view" id="panel-geracao" data-panel="geracao" aria-labelledby="generation-title" hidden>
+        <div class="section-head page-head"><div><h1 id="generation-title">Imagens e Vídeos</h1><p>Crie novas mídias a partir de uma descrição.</p></div></div>
+        <p id="generation-demo" class="demo-banner" hidden><strong>Demonstração</strong> O Cofry mostra arquivos de exemplo, sem enviar o pedido ao provedor.</p>
+        <div class="owner-columns">
+          <section class="card">
+            <div class="section-head"><h2>Nova geração</h2></div>
+            <div class="tabs" role="group" aria-label="Tipo de mídia">
+              <button id="generation-image-tab" type="button" aria-pressed="true">Imagem</button>
+              <button id="generation-video-tab" type="button" aria-pressed="false">Vídeo</button>
+            </div>
+            <form id="generation-form" class="owner-form">
+              <label>Modelo<select id="generation-model" required disabled></select></label>
+              <label>Descrição<textarea id="generation-prompt" rows="4" maxlength="2000" placeholder="Ex.: Uma rua de São Paulo ao anoitecer, com luz de néon e movimento suave de câmera" required></textarea></label>
+              <div class="pair">
+                <label>Formato<select id="generation-ratio" required disabled></select></label>
+                <label id="generation-duration-label" hidden>Duração<select id="generation-duration" required disabled></select></label>
+              </div>
+              <p id="generation-estimate" class="small" role="status">Carregando catálogo…</p>
+              <label id="generation-confirm-label" class="rights" hidden><input type="checkbox" id="generation-confirm">Autorizo esta geração e a cobrança estimada pelo provedor.</label>
+              <button class="primary" id="generation-submit" disabled>Gerar imagem</button>
+              <p id="generation-error" class="error" role="alert"></p>
+            </form>
+          </section>
+          <section class="card">
+            <div class="section-head"><h2>Histórico de gerações</h2><button id="generation-refresh" class="quiet" type="button">Atualizar</button></div>
+            <p id="generation-spend" class="small" hidden></p>
+            <p id="generation-history-state" class="small" role="status">Carregando histórico…</p>
+            <ul id="generation-history" class="owner-list"></ul>
+          </section>
+        </div>
+      </section>
+      <section class="view" id="panel-notificacoes" data-panel="notificacoes" aria-labelledby="notifications-title" hidden>
+        <div class="section-head page-head"><div><h1 id="notifications-title">Notificações</h1><p>Avisos de cortes, publicações e mensagens enviadas aos seus aparelhos.</p></div></div>
+        <div class="owner-columns">
+          <section class="card">
+            <div class="section-head"><h2>Caixa de entrada</h2><button id="notifications-read" class="quiet" type="button" disabled>Marcar como lidas</button></div>
+            <p id="notifications-empty" class="small" role="status">Carregando notificações…</p><ul id="notifications-list" class="owner-list"></ul>
+          </section>
+          <section class="card">
+            <div class="section-head"><div><h2>Enviar notificação</h2><p>Envie para os aparelhos ativados e registre o aviso na caixa de entrada.</p></div></div>
+            <form id="owner-message" class="owner-form">
+              <label>Título<input id="notification-title" maxlength="90" required></label>
+              <label>Texto<textarea id="notification-body" rows="3" maxlength="500" required></textarea></label>
+              <button class="primary" id="notification-send">Enviar notificação</button>
+              <p id="notification-response" class="small" role="status"></p>
+            </form>
+            <details><summary>Notificações neste aparelho</summary>
+              <p id="push-state" class="small" role="status">Carregando opções…</p>
+              <button id="push-subscribe" class="quiet" type="button" hidden>Ativar notificações</button>
+            </details>
+          </section>
+        </div>
+      </section>
+      <section class="view" id="panel-configuracoes" data-panel="configuracoes" aria-labelledby="settings-title" hidden>
+        <div class="section-head page-head"><div><h1 id="settings-title">Configurações</h1><p>Conta e instalação do aplicativo.</p></div></div>
+        <div class="settings-grid">
+          <div class="card"><h2>Conta</h2><p data-account-name>Proprietário</p><p data-account-email hidden></p><p id="auth-method"></p></div>
+          <div class="card"><h2>Instalar Cofry</h2><p id="install-help">Use a opção de instalação no menu do navegador. No iPhone, abra no Safari e selecione Compartilhar e Adicionar à Tela de Início.</p><button id="install-button" class="quiet" type="button" hidden>Instalar aplicativo</button></div>
+          <section class="card" data-owner-only hidden>
+            <h2>Gerações</h2><p id="pause-state" class="small" role="status">Carregando configuração…</p>
+            <button id="pause-generations" class="quiet" type="button" disabled>Pausar todas as gerações</button>
+          </section>
+          <section class="card" data-owner-only hidden>
+            <h2>Créditos do proprietário <span class="status-chip">Ilimitado</span></h2>
+            <p id="ledger-empty" class="small" role="status">Carregando histórico…</p><ul id="ledger-list" class="owner-list"></ul>
+          </section>
+        </div>
+      </section>
     </div>
   </main>
+  <nav id="bottom-nav" class="bottom-nav" aria-label="Atalhos do estúdio" hidden>
+    <a href="#inicio" data-route="inicio"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg><span>Início</span></a>
+    <a href="#novo" data-route="novo"><svg class="icon" aria-hidden="true"><use href="#i-cut"/></svg><span>Cortes</span></a>
+    <a href="#projetos" data-route="projetos"><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg><span>Projetos</span></a>
+    <a href="#agenda" data-route="agenda"><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg><span>Agenda</span></a>
+  </nav>
+  <dialog id="schedule-dialog" aria-labelledby="schedule-title">
+    <form id="schedule-form">
+      <div class="section-head"><h2 id="schedule-title">Agendar corte</h2><button id="schedule-close" type="button" class="quiet">Fechar</button></div>
+      <p id="schedule-mode" class="demo-banner" hidden>Agendamento de demonstração</p>
+      <label id="schedule-cut-label">Corte<select id="schedule-cut" required></select></label>
+      <fieldset id="schedule-accounts"><legend>Contas</legend><div id="schedule-account-list"></div></fieldset>
+      <div class="pair"><label>Data<input id="schedule-day" type="date" required></label>
+      <label>Hora de Brasília<input id="schedule-time" type="time" step="60" value="09:00" required></label></div>
+      <div id="schedule-presets" class="schedule-presets" aria-label="Horários comuns">
+        <button class="quiet" type="button" data-time="09:00">9h</button><button class="quiet" type="button" data-time="12:00">12h</button><button class="quiet" type="button" data-time="17:00">17h</button><button class="quiet" type="button" data-time="19:00">19h</button><button class="quiet" type="button" data-time="22:00">22h</button>
+      </div>
+      <div id="schedule-captions"></div>
+      <label class="rights" id="tiktok-consent" hidden><input id="schedule-consent" type="checkbox">Revisei o conteúdo e autorizo a publicação.</label>
+      <p id="schedule-summary" class="small" aria-live="polite"></p>
+      <button class="primary" id="schedule-submit">Confirmar agendamento</button><p id="schedule-error" class="error" role="alert"></p>
+    </form>
+  </dialog>
   <dialog id="edit"><form id="edit-form"><div class="section-head"><h2>Editar corte</h2><button id="close-edit" type="button" class="quiet">Fechar</button></div>
     <div class="pair"><label>Início original (s)<input name="inicio" type="number" min="0" step=".001" required></label><label>Fim original (s)<input name="fim" type="number" min="0" step=".001" required></label></div>
     <label>Gancho<input name="gancho" maxlength="120"></label><label>Manchete<input name="manchete" maxlength="160" placeholder="Deixe vazio para ocultar"></label>

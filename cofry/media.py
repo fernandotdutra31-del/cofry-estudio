@@ -2,6 +2,7 @@ import json
 import logging
 import math
 import subprocess
+import threading
 import time
 from collections import deque
 from urllib3.exceptions import HTTPError
@@ -10,6 +11,7 @@ from .config import Problem
 from .network import normalize, request, validate, youtube_proxy, youtube_url
 
 LOG = logging.getLogger(__name__)
+MEDIA_SLOT = threading.Lock()
 YOUTUBE = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}
 DEMUXERS = "mov,matroska,webm,avi,mpegts,mpeg,flv,ogg,wav,mp3"
 INPUT = ["-protocol_whitelist", "file", "-format_whitelist", DEMUXERS]

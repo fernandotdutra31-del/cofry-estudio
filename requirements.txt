@@ -5,3 +5,5 @@ boto3>=1.36,<2
 faster-whisper>=1.1,<2
 opencv-python-headless>=4.10,<5
 yt-dlp[default]>=2026.2.4
+
+pywebpush>=2.0,<3

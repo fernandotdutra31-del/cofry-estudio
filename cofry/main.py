@@ -8,14 +8,17 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from .config import Problem, Settings
+from .generation import router as generation_router, worker as generation_worker
 from .network import validate
+from .owner import deliver_push, router as owner_router
 from .job_store import Queue
 from .schema import Edit, Job
 from .service import deliver, work
 from .studio import CALLBACK, router as studio_router
+from .social import router as social_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 
@@ -42,7 +45,7 @@ async def lifespan(app):
         stop = threading.Event()
         app.state.settings, app.state.queue = settings, queue
         threads = [threading.Thread(target=target, args=(queue, settings, stop), daemon=True)
-                   for target in (work, deliver)]
+                   for target in (work, deliver, deliver_push, generation_worker)]
         for thread in threads:
             thread.start()
         try:
@@ -58,13 +61,17 @@ app = FastAPI(title="Cofry Processamento", version="1.0.0", lifespan=lifespan,
 
 
 app.include_router(studio_router)
+app.include_router(social_router)
+app.include_router(owner_router)
+app.include_router(generation_router)
 
 
 @app.middleware("http")
 async def authenticate(request: Request, call_next):
     path = request.scope["path"]
     studio = path == "/studio" or path.startswith("/studio/")
-    if not studio and (path != "/health" or request.method != "GET"):
+    public_page = request.method in {"GET", "HEAD"} and path == "/"
+    if not studio and not public_page and (path != "/health" or request.method != "GET"):
         key = request.headers.get("X-API-Key", "")
         if not hmac.compare_digest(key.encode(), request.app.state.settings.api_key.encode()):
             return JSONResponse({"detail": "Chave de API inválida."}, status_code=401)
@@ -92,6 +99,11 @@ async def validation_error(request, exc):
 @app.get("/health")
 def health(request: Request):
     return {"ok": True, "url_download_habilitado": request.app.state.settings.youtube}
+
+
+@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
+def portal():
+    return RedirectResponse("/studio")
 
 
 @app.post("/jobs", status_code=202)

@@ -23,6 +23,25 @@ class Queue:
                 CREATE TABLE IF NOT EXISTS uploads (
                     object_key TEXT PRIMARY KEY, job TEXT NOT NULL, committed INTEGER NOT NULL DEFAULT 0, expires REAL NOT NULL
                 );
+                CREATE INDEX IF NOT EXISTS idx_uploads_job_expiry ON uploads(job, committed, expires);
+                CREATE TABLE IF NOT EXISTS studio_project_metadata (
+                    job TEXT PRIMARY KEY, title TEXT NOT NULL, created REAL NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS studio_owner_state (
+                    id INTEGER PRIMARY KEY CHECK(id=1), paused INTEGER NOT NULL DEFAULT 0
+                );
+                CREATE TABLE IF NOT EXISTS studio_notifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, title TEXT NOT NULL,
+                    body TEXT NOT NULL, created REAL NOT NULL, read INTEGER NOT NULL DEFAULT 0,
+                    push_pending INTEGER NOT NULL DEFAULT 0
+                );
+                CREATE TABLE IF NOT EXISTS studio_ledger (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL,
+                    detail TEXT NOT NULL, created REAL NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS studio_push_subscriptions (
+                    endpoint TEXT PRIMARY KEY, p256dh TEXT NOT NULL, auth TEXT NOT NULL
+                );
             """)
 
     @contextmanager
@@ -37,15 +56,29 @@ class Queue:
         finally:
             db.close()
 
-    def submit(self, job):
+    def submit(self, job, studio_title=None):
         result = dict(status="queued", etapa="fila", progresso=0, erro=None, cortes=[])
         with self.connect(True) as db:
+            now = time.time()
             db.execute("INSERT OR IGNORE INTO jobs VALUES (?, ?, ?, 'initial', NULL, 'queued', ?, NULL, NULL, NULL)",
-                       (job.job_id, job.model_dump_json(), json.dumps(result), time.time()))
+                       (job.job_id, job.model_dump_json(), json.dumps(result), now))
             row = self.get(job.job_id, db)
             if row["request"] != job.model_dump_json():
                 return "conflict", None
+            if studio_title is not None:
+                db.execute("INSERT OR IGNORE INTO studio_project_metadata VALUES (?, ?, ?)",
+                           (job.job_id, studio_title, now))
             return row["state"], json.loads(row["result"])
+
+    def studio_paused(self):
+        with self.connect() as db:
+            row = db.execute("SELECT paused FROM studio_owner_state WHERE id=1").fetchone()
+            return bool(row and row["paused"])
+
+    @staticmethod
+    def studio_notice(db, kind, title, body):
+        db.execute("INSERT INTO studio_notifications(kind,title,body,created,push_pending) VALUES (?,?,?,?,1)",
+                   (kind, title, body, time.time()))
 
     def get(self, job_id, db=None):
         if db is None:
@@ -85,6 +118,7 @@ class Queue:
                 db.execute("""UPDATE jobs SET state='deleting', action='delete', result=?, words=NULL,
                            duration=NULL, fingerprint=NULL, edit=NULL WHERE id=?""", (json.dumps(result), job_id))
                 db.execute("DELETE FROM outbox WHERE job=?", (job_id,))
+                db.execute("DELETE FROM studio_project_metadata WHERE job=?", (job_id,))
             return True
 
     def recover(self):
@@ -131,6 +165,18 @@ class Queue:
             if job.callback_url != "https://studio.cofry.invalid/":
                 db.execute("INSERT INTO outbox(job,url,body,due) VALUES (?,?,?,?)",
                        (job.job_id, job.callback_url, body, time.time()))
+            else:
+                named = db.execute("SELECT title FROM studio_project_metadata WHERE job=?",
+                                   (job.job_id,)).fetchone()
+                name = named["title"] if named else f"Projeto {job.job_id[:8]}"
+                if error:
+                    self.studio_notice(db, "corte_falhou", "Falha no processamento", f"{name}: {error}")
+                else:
+                    is_edit = row["action"] == "rerender"
+                    detail = f"{name} · " + ("1 corte editado" if is_edit else f"{len(cuts)} cortes")
+                    db.execute("INSERT INTO studio_ledger(kind,detail,created) VALUES (?,?,?)",
+                               ("rerender" if is_edit else "cortes", detail, time.time()))
+                    self.studio_notice(db, "cortes_prontos", "Corte editado" if is_edit else "Cortes prontos", detail)
             return True
 
     def record(self, job_id, key):

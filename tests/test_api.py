@@ -286,6 +286,7 @@ def test_studio_upload_and_local_rerender(monkeypatch, tmp_path, fixture_video):
         assert client.get("/studio/session").json()["modo"] == "local"
         posted = client.post("/studio/projects", content=fixture_video.read_bytes(), headers={
             "Content-Type": "application/octet-stream",
+            "X-Studio-Title": "V%C3%ADdeo%20de%20teste.mp4",
             "X-Studio-Options": json.dumps({"quantidade": 1, "duracao_min": 3, "duracao_pref": 6,
                                             "duracao_max": 12, "formato": "1:1"}),
         })
@@ -299,6 +300,11 @@ def test_studio_upload_and_local_rerender(monkeypatch, tmp_path, fixture_video):
         result = wait_for(completed)
         assert result["status"] == "completed", result
         cut = result["cortes"][0]
+        project, = client.get("/studio/projects").json()
+        assert project["title"] == "Vídeo de teste.mp4"
+        assert project["thumbnail"] == cut["url_capa"]
+        assert project["created_at"] and project["expires_at"]
+        assert client.patch(project_path, json={"title": "Projeto revisado"}).status_code == 200
         assert "studio/media" in cut["url_mp4"]
         assert client.get(cut["url_mp4"], headers={"Range":"bytes=0-15"}).status_code == 206
         edit = client.post(project_path + "/cuts/" + cut["id"], json={
@@ -309,6 +315,12 @@ def test_studio_upload_and_local_rerender(monkeypatch, tmp_path, fixture_video):
         assert revised["status"] == "completed", revised
         assert revised["cortes"][0]["gancho"] == "Veja a pergunta"
         assert revised["cortes"][0]["url_mp4"] != cut["url_mp4"]
+        renamed, = client.get("/studio/projects").json()
+        assert renamed["title"] == "Projeto revisado"
+        assert renamed["created_at"] == project["created_at"]
+        owner = client.get("/studio/owner").json()
+        assert {entry["kind"] for entry in owner["ledger"]} == {"cortes", "rerender"}
+        assert owner["unread"] == 2
         assert client.delete(project_path).status_code == 202
         wait_for(lambda: client.get(revised["cortes"][0]["url_mp4"]).status_code == 404)
         assert client.delete("/studio/session").status_code == 200
@@ -326,3 +338,12 @@ def test_studio_secure_cookie_when_proxy_terminates_tls(monkeypatch, tmp_path):
         assert "Secure" in response.headers["set-cookie"]
         assert client.get("/studio/projects").status_code == 401
         assert client.get("https://testserver/studio/projects").status_code == 200
+
+
+def test_home_redirects_to_studio(monkeypatch, tmp_path):
+    prepare(monkeypatch, tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        response = client.get("/")
+        assert response.status_code == 307
+        assert response.headers["location"] == "/studio"
+        assert client.get("/jobs/example").status_code == 401

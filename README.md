@@ -165,6 +165,45 @@ Tempo de upload e recursos disponíveis dependem do plano de hospedagem.
 A instalação da PWA adiciona um atalho com interface independente. Gerar cortes
 e acessar projetos requer conexão com o servidor que executa o FFmpeg e o Whisper.
 
+### Entrar com Google
+
+No Console do Google Cloud, crie um cliente OAuth do tipo **Aplicativo da Web**,
+configure a tela de consentimento e adicione a URL
+`https://<seu-domínio>/studio/auth/google/callback` como URI de redirecionamento
+autorizada. Use o mesmo endereço em `GOOGLE_REDIRECT_URI`. Defina no servidor
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` e `OWNER_EMAIL`, com o e-mail do
+proprietário. O acesso pelo Google exige que a conta corresponda ao e-mail
+verificado do proprietário.
+
+Sem essas variáveis, a entrada usa a chave `STUDIO_ACCESS_KEY` do serviço.
+Em modo de teste no Console do Google, inclua o proprietário na lista de
+usuários de teste.
+
+### Projetos, Agenda e Contas
+
+Os projetos mostram o nome, a capa, os cortes e a data de expiração disponível.
+No plano gratuito, a perda de arquivos em reinícios pode ocorrer antes dessa
+data. A Agenda usa o horário de Brasília e permite agendar pelo próprio corte.
+
+Defina `ZERNIO_API_KEY` no servidor para consultar contas e usar o agendamento
+real. Conecte suas redes previamente no Zernio. Sem a chave, a faixa
+**Demonstração** identifica as contas de teste e os agendamentos locais.
+
+### Notificações, créditos e Imagens e Vídeos
+
+Os avisos do estúdio e o histórico de operações estão disponíveis para o
+proprietário. A pausa bloqueia novas gerações e edições. Para enviar avisos
+também aos dispositivos inscritos, configure `VAPID_PUBLIC_KEY`,
+`VAPID_PRIVATE_KEY` e `VAPID_SUBJECT` (ou `OWNER_EMAIL`) e autorize as
+notificações pelo navegador.
+
+Imagens e Vídeos gera amostras sinalizadas como **Demonstração** se `FAL_KEY`
+estiver ausente. Com a chave no servidor, a tela exibe uma estimativa em dólares
+antes de enviar a solicitação. O provedor pode cobrar o preço vigente. A API do
+estúdio aceita os cinco modelos listados na tela e divide vídeos longos em cenas
+compatíveis com o modelo. O histórico e os arquivos de geração ficam no volume
+configurado no serviço, que é efêmero no plano Render Free.
+
 ### Blueprint do Render
 
 O arquivo `render.yaml` configura uma instância de 2 CPU e 4 GB com disco
