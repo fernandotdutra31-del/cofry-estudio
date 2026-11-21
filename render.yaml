@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: cofry-estudio
+    runtime: docker
+    plan: 2c-4g
+    numInstances: 1
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    disk:
+      name: cofry-data
+      mountPath: /data
+      sizeGB: 10
+    envVars:
+      - key: PROCESSING_API_KEY
+        generateValue: true
+      - key: WEBHOOK_SECRET
+        generateValue: true
+      - key: STUDIO_ACCESS_KEY
+        generateValue: true
+      - key: STUDIO_COOKIE_SECURE
+        value: "true"
+      - key: WHISPER_MODEL
+        value: small
+      - key: LLM_PROVIDER
+        value: openai
+      - key: LLM_API_KEY
+        sync: false
+      - key: STUDIO_USE_S3
+        value: "true"
+      - key: STORAGE_ENDPOINT_URL
+        sync: false
+      - key: STORAGE_REGION
+        sync: false
+      - key: STORAGE_BUCKET
+        sync: false
+      - key: STORAGE_ACCESS_KEY_ID
+        sync: false
+      - key: STORAGE_SECRET_ACCESS_KEY
+        sync: false
+      - key: STORAGE_PUBLIC_BASE_URL
+        sync: false

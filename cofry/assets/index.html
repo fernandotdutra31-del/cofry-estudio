@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111019">
+  <meta name="description" content="Estúdio Cofry para transformar vídeos longos em cortes com gancho e legenda.">
+  <link rel="icon" href="/studio/assets/icon.png">
+  <link rel="manifest" href="/studio/assets/manifest.webmanifest">
+  <link rel="stylesheet" href="/studio/assets/style.css">
+  <title>Cofry · Estúdio de cortes</title>
+  <script type="module" src="/studio/assets/app.js"></script>
+</head>
+<body>
+  <header class="bar">
+    <a class="wordmark" href="/studio"><img src="/studio/assets/icon.png" alt="">Cofry</a>
+    <nav aria-label="Estúdio"><a href="#novo">Novo corte</a><a href="#projetos">Meus projetos</a></nav>
+    <button id="logout" class="quiet" type="button" hidden>Sair</button>
+  </header>
+  <main>
+    <section class="intro" id="novo">
+      <div class="intro-copy"><span class="tag">ESTÚDIO DE CORTES</span><h1>Seu próximo<br>melhor <em>corte.</em></h1><p>Transforme vídeos longos em cortes com gancho, legendas e capa, prontos para Reels, TikTok e Shorts.</p></div>
+      <div class="art" aria-hidden="true"><div class="film"></div><div class="wave" id="wave"></div><div class="playhead"></div><div class="track"><i></i><i></i><i></i></div></div>
+    </section>
+    <form id="login" class="card login">
+      <div><h2>Entre no estúdio</h2><p>Use a chave de acesso configurada no servidor.</p></div>
+      <label>Chave do estúdio<input id="key" type="password" autocomplete="current-password" required></label>
+      <button class="primary">Entrar</button><p class="error" id="login-error" role="alert"></p>
+    </form>
+    <div id="workspace" hidden>
+      <form id="job" class="columns">
+        <section class="card source">
+          <div class="section-head"><div><h2>Vídeo de origem</h2><p>Use um arquivo ou informe um link HTTPS.</p></div></div>
+          <div class="tabs" role="group" aria-label="Origem"><button id="file-tab" type="button" aria-pressed="true">Enviar arquivo</button><button id="url-tab" type="button" aria-pressed="false">Usar link</button></div>
+          <label id="drop" class="drop" tabindex="0"><input type="file" id="file" accept="video/*,.mkv" hidden><span class="upload-icon" aria-hidden="true">↑</span><strong id="filename">Arraste seu vídeo aqui</strong><span id="limits">Ou clique para escolher um arquivo · mínimo 2 minutos</span></label>
+          <div id="url-panel" hidden><label>Link do vídeo<input id="url" type="url" placeholder="https://…" maxlength="12000"></label><p id="link-help" class="small"></p></div>
+          <div id="upload-status" aria-live="polite"></div>
+        </section>
+        <section class="card settings">
+          <div class="section-head"><div><h2>Como ficarão os cortes?</h2><p id="mode"></p></div></div>
+          <div class="pair"><label>Quantidade<input name="quantidade" type="number" min="1" max="20" value="3" required></label><label>Formato<select name="formato"><option>9:16</option><option>1:1</option><option>16:9</option></select></label></div>
+          <div class="triple"><label>Mín. (s)<input name="duracao_min" type="number" min="1" max="300" value="15" required></label><label>Ideal (s)<input name="duracao_pref" type="number" min="1" max="300" value="35" required></label><label>Máx. (s)<input name="duracao_max" type="number" min="1" max="300" value="60" required></label></div>
+          <label>Foco dos cortes<input name="foco" maxlength="1000" placeholder="Ex.: a descoberta mais surpreendente"></label>
+          <details><summary>Mais opções</summary>
+            <div class="pair"><label>Enquadramento<select name="enquadramento"><option value="preencher">Preencher</option><option value="inteiro">Inteiro com faixas</option><option value="desfocado">Fundo desfocado</option></select></label><label>Legenda<select name="estilo_legenda" id="styles"></select></label></div>
+            <div class="pair"><label>Posição da legenda<select name="posicao_legenda"><option value="inferior">Inferior</option><option value="central">Central</option><option value="superior">Superior</option></select></label><label>Idioma do vídeo<select name="idioma"><option value="pt">Português</option><option value="auto">Detectar</option><option value="en">Inglês</option><option value="es">Espanhol</option></select></label></div>
+            <div class="pair"><label>Palavras-chave<input name="palavras_chave" placeholder="Separe por vírgula"></label><label>Evitar<input name="evitar" placeholder="Separe por vírgula"></label></div>
+            <div class="pair"><label>A partir de (s)<input name="trecho_inicio" type="number" min="0" step=".01" value="0"></label><label>Até (s)<input name="trecho_fim" type="number" min="0" step=".01" placeholder="Fim do vídeo"></label></div>
+            <div class="checks"><label><input type="checkbox" name="gancho" checked> Gancho inicial</label><label><input type="checkbox" name="seguir_rosto"> Seguir rosto</label><label><input type="checkbox" name="manchete"> Manchete</label></div>
+          </details>
+          <button class="primary" id="generate">Gerar cortes</button>
+          <p id="job-error" class="error" role="alert"></p>
+        </section>
+      </form>
+      <section id="projetos" class="projects"><h2>Meus projetos</h2><p id="projects-message" aria-live="polite"></p><div id="projects-list"></div></section>
+    </div>
+  </main>
+  <dialog id="edit"><form id="edit-form"><div class="section-head"><h2>Editar corte</h2><button id="close-edit" type="button" class="quiet">Fechar</button></div>
+    <div class="pair"><label>Início original (s)<input name="inicio" type="number" min="0" step=".001" required></label><label>Fim original (s)<input name="fim" type="number" min="0" step=".001" required></label></div>
+    <label>Gancho<input name="gancho" maxlength="120"></label><label>Manchete<input name="manchete" maxlength="160" placeholder="Deixe vazio para ocultar"></label>
+    <label>Estilo da legenda<select name="estilo" id="edit-styles"></select></label>
+    <label>Legendas personalizadas<textarea name="blocos" rows="3" placeholder="12.5 | 15.0 | Texto da legenda"></textarea></label>
+    <p class="small">Um bloco por linha com início e fim no vídeo original. Vazio usa as legendas automáticas.</p>
+    <button class="primary">Renderizar novamente</button><p class="error" id="edit-error" role="alert"></p></form>
+  </dialog>
+</body>
+</html>

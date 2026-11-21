@@ -1,0 +1,7 @@
+{
+  "name": "cofry-studio",
+  "private": true,
+  "scripts": {
+    "dev": "sh ./run-studio.sh"
+  }
+}

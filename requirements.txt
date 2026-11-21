@@ -1,0 +1,7 @@
+fastapi>=0.115,<1
+uvicorn>=0.34,<1
+urllib3>=2.3,<3
+boto3>=1.36,<2
+faster-whisper>=1.1,<2
+opencv-python-headless>=4.10,<5
+yt-dlp[default]>=2026.2.4
