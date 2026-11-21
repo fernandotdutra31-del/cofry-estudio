@@ -18,6 +18,7 @@ from pydantic import Field
 from urllib3.exceptions import HTTPError
 
 from . import media as media_tools
+from . import cloudflare_media
 from .config import Problem
 from .network import read_limited, request as outbound, validate
 from .schema import Model
@@ -32,6 +33,8 @@ MODELS = {
     "minimax-h3-max": ("MiniMax H3 Max", "video", "minimax/h3-max/text-to-video", .05, tuple(range(3, 16))),
     "kling-v3-pro": ("Kling v3 Pro", "video", "fal-ai/kling-video/v3/pro/text-to-video", .112, tuple(range(3, 16))),
     "veo-3-1": ("Veo 3.1", "video", "fal-ai/veo3.1", .20, (4, 6, 8)),
+    "flux-cloudflare": ("FLUX · Workers AI", "imagem", "", 0, ()),
+    "animacao-cloudflare": ("Animação de imagem · Workers AI", "video", "", 0, tuple(range(3, 31))),
 }
 RATIOS = {"16:9": (960, 544), "9:16": (544, 960), "1:1": (768, 768)}
 
@@ -54,11 +57,16 @@ def durations(seconds, allowed):
 
 
 def catalog():
+    cloudflare_key = cloudflare_media.Credentials.configured()
+    fal = bool(os.getenv("FAL_KEY"))
     return [{
         "id": name, "label": item[0], "kind": item[1], "usd": item[3],
+        "provider": "cloudflare" if name in cloudflare_media.MODEL_IDS else "fal",
+        "free": name in cloudflare_media.MODEL_IDS,
+        "available": bool(cloudflare_key) if name in cloudflare_media.MODEL_IDS else (fal or not cloudflare_key),
         "durations": [n for n in range(3, 31) if durations(n, item[4])] if item[4] else [],
         "ratios": list(RATIOS) if name != "veo-3-1" else ["16:9", "9:16"],
-    } for name, item in MODELS.items()]
+    } for name, item in MODELS.items() if cloudflare_key or name not in cloudflare_media.MODEL_IDS]
 
 
 def plan(payload):
@@ -96,6 +104,7 @@ def format_row(row):
         "kind": MODELS[data["model_id"]][1], "model": MODELS[data["model_id"]][0],
         "prompt": data["prompt"], "estimate_usd": row["estimate"], "url": row["output"],
         "error": row["error"], "created_at": datetime.fromtimestamp(row["created"], UTC).isoformat(),
+        "model_id": data["model_id"],
     }
 
 
@@ -105,7 +114,8 @@ def list_generations(request: Request):
     schema(state.queue)
     with state.queue.connect() as db:
         rows = db.execute("SELECT * FROM studio_generations ORDER BY created DESC LIMIT 80").fetchall()
-    return {"mode": "real" if os.getenv("FAL_KEY") else "demo", "models": catalog(),
+    return {"mode": "real" if os.getenv("FAL_KEY") or cloudflare_media.Credentials.configured() else "demo",
+            "models": catalog(),
             "runs": [format_row(row) for row in rows]}
 
 
@@ -114,8 +124,13 @@ def create(payload: Generation, request: Request):
     state = guard(request)
     require_generation_open(state)
     parts, estimate = plan(payload)
-    demo = not os.getenv("FAL_KEY")
-    if not demo and not payload.confirmed:
+    is_free = payload.model_id in cloudflare_media.MODEL_IDS
+    cloudflare_key = cloudflare_media.Credentials.configured()
+    fal = bool(os.getenv("FAL_KEY"))
+    if (is_free and not cloudflare_key) or (not is_free and cloudflare_key and not fal):
+        raise HTTPException(409, "Este modelo ainda não está conectado.")
+    demo = not (is_free or fal)
+    if not demo and not is_free and not payload.confirmed:
         raise HTTPException(422, "Confirme o custo estimado antes de gerar.")
     schema(state.queue)
     job = uuid4().hex
@@ -271,20 +286,44 @@ def advance(queue, row, settings, key):
         return
     with media_tools.MEDIA_SLOT:
         output = finish_media(row, state["urls"], kind, settings.data)
+    complete(queue, row, label, output)
+
+
+def complete(queue, row, label, output, free=False):
     with queue.connect(True) as db:
         db.execute("UPDATE studio_generations SET status='completed', output=? WHERE id=?", (output, row["id"]))
+        cost = "Workers AI" if free else f"estimativa US$ {row['estimate']:.3f}"
         db.execute("INSERT INTO studio_ledger(kind,detail,created) VALUES (?,?,?)",
-                   ("midia", f"{label} · estimativa US$ {row['estimate']:.3f}", time.time()))
+                   ("midia", f"{label} · {cost}", time.time()))
         queue.studio_notice(db, "midia_pronta", "Geração concluída", label)
 
 
+def generate_with_cloudflare(queue, row, settings, credentials, data):
+    if not credentials:
+        raise Problem("Conecte a Cloudflare Workers AI para usar este modelo.")
+    with queue.connect(True) as db:
+        db.execute("UPDATE studio_generations SET status='submitting' WHERE id=?", (row["id"],))
+    image = cloudflare_media.generate_image(credentials, data["prompt"])
+    with queue.connect(True) as db:
+        db.execute("UPDATE studio_generations SET status='running' WHERE id=?", (row["id"],))
+    cloudflare_media.save_result(image, data["model_id"], data["ratio"], data["duration"],
+                                 settings.data / "generations" / row["id"])
+    complete(queue, row, MODELS[data["model_id"]][0], "/studio/generations/media/" + row["id"], free=True)
+
+
 def worker(queue, settings, stop):
-    if not (key := os.getenv("FAL_KEY")):
+    key = os.getenv("FAL_KEY")
+    cloudflare_key = cloudflare_media.Credentials.configured()
+    if not (key or cloudflare_key):
         return
     schema(queue)
     with queue.connect(True) as db:
         db.execute("UPDATE studio_generations SET status='failed', error=? WHERE status='submitting'",
-                   ("O servidor reiniciou durante o envio. Consulte o histórico na fal.ai antes de tentar novamente.",))
+                   ("O servidor reiniciou durante o envio. Consulte o histórico do provedor antes de tentar novamente.",))
+        db.execute("""
+            UPDATE studio_generations SET status='failed', error=?
+            WHERE status='running' AND json_extract(request, '$.model_id') IN ('flux-cloudflare','animacao-cloudflare')
+        """, ("O servidor reiniciou antes de salvar a geração.",))
     while not stop.wait(4):
         with queue.connect() as db:
             row = db.execute("SELECT * FROM studio_generations WHERE status IN ('queued','running') "
@@ -293,8 +332,14 @@ def worker(queue, settings, stop):
             continue
         try:
             if time.time() - row["created"] > 3600:
-                raise Problem("A geração ultrapassou o tempo de espera. Consulte o histórico na fal.ai.")
-            advance(queue, row, settings, key)
+                raise Problem("A geração ultrapassou o tempo de espera. Consulte o histórico no provedor.")
+            data = json.loads(row["request"])
+            if data["model_id"] in cloudflare_media.MODEL_IDS:
+                generate_with_cloudflare(queue, row, settings, cloudflare_key, data)
+            elif not key:
+                raise Problem("Conecte a fal.ai para usar este modelo.")
+            else:
+                advance(queue, row, settings, key)
         except Exception as exc:
             message = str(exc) if isinstance(exc, Problem) else "Não foi possível montar o resultado da geração."
             LOG.warning("Geração %s falhou (%s).", row["id"], type(exc).__name__)

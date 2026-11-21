@@ -178,14 +178,15 @@
         <p id="generation-demo" class="demo-banner" hidden><strong>Demonstração</strong> O Cofry mostra arquivos de exemplo, sem enviar o pedido ao provedor.</p>
         <div class="owner-columns">
           <section class="card">
-            <div class="section-head"><h2>Nova geração</h2></div>
+            <div class="section-head"><h2>Seu pedido</h2></div>
             <div class="tabs" role="group" aria-label="Tipo de mídia">
               <button id="generation-image-tab" type="button" aria-pressed="true">Imagem</button>
               <button id="generation-video-tab" type="button" aria-pressed="false">Vídeo</button>
             </div>
             <form id="generation-form" class="owner-form">
               <label>Modelo<select id="generation-model" required disabled></select></label>
-              <label>Descrição<textarea id="generation-prompt" rows="4" maxlength="2000" placeholder="Ex.: Uma rua de São Paulo ao anoitecer, com luz de néon e movimento suave de câmera" required></textarea></label>
+              <label>O que você quer criar?<textarea id="generation-prompt" rows="4" maxlength="2000" placeholder="Ex.: Crie uma foto vertical de São Paulo ao anoitecer" required></textarea></label>
+              <p id="generation-prompt-review" class="small" aria-live="polite"></p>
               <div class="pair">
                 <label>Formato<select id="generation-ratio" required disabled></select></label>
                 <label id="generation-duration-label" hidden>Duração<select id="generation-duration" required disabled></select></label>
@@ -197,7 +198,7 @@
             </form>
           </section>
           <section class="card">
-            <div class="section-head"><h2>Histórico de gerações</h2><button id="generation-refresh" class="quiet" type="button">Atualizar</button></div>
+            <div class="section-head"><h2>Pedidos e resultados</h2><button id="generation-refresh" class="quiet" type="button">Atualizar</button></div>
             <p id="generation-spend" class="small" hidden></p>
             <p id="generation-history-state" class="small" role="status">Carregando histórico…</p>
             <ul id="generation-history" class="owner-list"></ul>

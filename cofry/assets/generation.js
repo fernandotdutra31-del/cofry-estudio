@@ -9,6 +9,18 @@ const formatLabels = {"16:9":"Horizontal · 16:9", "9:16":"Vertical · 9:16", "1
 const amounts = new Intl.NumberFormat("pt-BR",{style:"currency",currency:"USD",maximumFractionDigits:3});
 const time = new Intl.DateTimeFormat("pt-BR",{dateStyle:"short",timeStyle:"short",timeZone:"America/Sao_Paulo"});
 
+function promptOptions(value) {
+  const text = value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+  const request = text.split(/\s+(?:de|com|mostrando)\s+/)[0];
+  const type = request.match(/\b(video|animacao|foto|imagem|ilustracao|fotografia)\b/)?.[1];
+  const kind = !type ? null : ["video","animacao"].includes(type) ? "video" : "imagem";
+  const shape = text.match(/\b(9\s*:\s*16|16\s*:\s*9|1\s*:\s*1|vertical|horizontal|quadrad[oa])\b/)?.[1]
+    ?.replace(/\s/g,"");
+  const ratio = ({vertical:"9:16",horizontal:"16:9",quadrado:"1:1",quadrada:"1:1"})[shape] ?? shape;
+  const seconds = text.match(/\b(\d{1,3})\s*(?:segundos?|s)\b/)?.[1];
+  return {kind,ratio,seconds};
+}
+
 function node(tag, text, className) {
   const result = document.createElement(tag);
   if (text !== undefined) result.textContent = text;
@@ -62,7 +74,8 @@ function historyItem(run) {
   const date = new Date(run.created_at);
   const summary = [
     Number.isFinite(date.getTime()) ? time.format(date) : "",
-    run.mode === "demo" ? "Demonstração" : `Estimativa: ${amounts.format(run.estimate_usd)}`
+    run.mode === "demo" ? "Demonstração" : run.model_id === "animacao-cloudflare"
+      ? "Animação de imagem" : `Estimativa: ${amounts.format(run.estimate_usd)}`
   ].filter(Boolean);
   item.append(heading,node("p",summary.join(" · "),"small"),node("p",run.prompt));
   if (run.error) item.append(node("p",run.error,"error"));
@@ -71,7 +84,7 @@ function historyItem(run) {
 }
 
 export function createGeneration({api}) {
-  let enabled = false, state, version = 0, pending, timer, sending = false, kind = "imagem";
+  let enabled = false, state, version = 0, pending, timer, sending = false, kind = "imagem", mismatch = "";
   const form = $("#generation-form");
   const modelField = $("#generation-model");
   const ratioField = $("#generation-ratio");
@@ -93,23 +106,32 @@ export function createGeneration({api}) {
   function updateSummary() {
     const model = selectedModel();
     const isDemo = state?.mode === "demo";
-    const needsConfirmation = state?.mode === "real";
+    const needsConfirmation = state?.mode === "real" && model && !model.free;
     const estimate = $("#generation-estimate");
     $("#generation-confirm-label").hidden = !needsConfirmation;
     checked.required = needsConfirmation;
     checked.disabled = !needsConfirmation;
-    submit.disabled = sending || !model || !prompt.value.trim() || (needsConfirmation && !checked.checked);
-    submit.textContent = sending ? "Enviando…" : (kind === "imagem" ? "Gerar imagem" : "Gerar vídeo");
+    submit.disabled = sending || !model || !prompt.value.trim() || Boolean(mismatch) ||
+      (needsConfirmation && !checked.checked);
+    submit.textContent = sending ? "Enviando…" : isDemo ? "Ver exemplo" :
+      model?.id === "animacao-cloudflare" ? "Animar imagem" : kind === "imagem" ? "Gerar imagem" : "Gerar vídeo";
     if (!state) {
       estimate.textContent = "Carregando catálogo…";
     } else if (!model) {
       estimate.textContent = "Nenhum modelo está disponível para esse formato.";
     } else if (isDemo) {
-      estimate.textContent = "Custo da demonstração: US$ 0.";
+      estimate.textContent = "Sem provedor conectado. O botão abre uma amostra fixa, independente do pedido.";
+    } else if (model.free) {
+      estimate.textContent = model.id === "animacao-cloudflare"
+        ? "O modelo cria uma imagem pelo seu pedido e aplica um zoom. Usa a franquia do Workers AI."
+        : "A imagem será gerada pelo seu pedido usando a franquia do Workers AI.";
     } else {
       const seconds = model.kind === "video" ? Number(durationField.value) : 1;
       estimate.textContent = `Custo estimado: ${amounts.format(model.usd * seconds)}. O valor final depende do provedor.`;
     }
+    $("#generation-prompt-review").textContent = mismatch || (model && prompt.value.trim()
+      ? `Pedido selecionado: ${kind === "imagem" ? "imagem" : "vídeo"} · ${ratioField.value}${kind === "video" ? ` · ${durationField.value} s` : ""}`
+      : "");
   }
 
   function updateFormats() {
@@ -123,13 +145,16 @@ export function createGeneration({api}) {
   }
 
   function updateModel() {
-    setOptions(modelField,(state?.models || []).filter(model => model.kind === kind).map(model => [model.label,model.id]),modelField.value);
+    const options = (state?.models || []).filter(model => model.kind === kind && model.available !== false);
+    options.sort((a,b) => Number(Boolean(b.free)) - Number(Boolean(a.free)));
+    setOptions(modelField,options.map(model => [model.label,model.id]),modelField.value);
     updateFormats();
   }
 
   function chooseType(type) {
     if (sending || kind === type) return;
     kind = type;
+    mismatch = "";
     $("#generation-image-tab").setAttribute("aria-pressed",String(kind === "imagem"));
     $("#generation-video-tab").setAttribute("aria-pressed",String(kind === "video"));
     $("#generation-error").textContent = "";
@@ -158,7 +183,10 @@ export function createGeneration({api}) {
       const newHistory = !state || JSON.stringify(state.runs) !== JSON.stringify(data.runs) || state.mode !== data.mode;
       state = data;
       $("#generation-demo").hidden = state.mode !== "demo";
-      if (newCatalog) updateModel();
+      if (newCatalog) {
+        updateModel();
+        interpretPrompt();
+      }
       if (newHistory) drawHistory();
     }).catch(error => {
       if (!enabled || current !== version) return;
@@ -178,6 +206,7 @@ export function createGeneration({api}) {
     pending = undefined;
     state = undefined;
     sending = false;
+    mismatch = "";
     clearTimeout(timer);
     form.reset();
     $("#generation-history").replaceChildren();
@@ -194,22 +223,39 @@ export function createGeneration({api}) {
   $("#generation-image-tab").addEventListener("click",() => chooseType("imagem"));
   $("#generation-video-tab").addEventListener("click",() => chooseType("video"));
   $("#generation-refresh").addEventListener("click",refresh);
-  modelField.addEventListener("change",updateFormats);
+  function interpretPrompt() {
+    if (sending) return;
+    const request = promptOptions(prompt.value);
+    if (request.kind) chooseType(request.kind);
+    const model = selectedModel();
+    mismatch = "";
+    if (model && request.ratio) {
+      if (model.ratios.includes(request.ratio)) ratioField.value = request.ratio;
+      else mismatch = "O modelo atual não oferece o formato pedido. Escolha um formato disponível.";
+    }
+    if (model?.kind === "video" && request.seconds) {
+      if (model.durations.includes(Number(request.seconds))) durationField.value = request.seconds;
+      else mismatch = "O modelo atual não oferece a duração pedida. Escolha uma duração disponível.";
+    }
+    checked.checked = false;
+    updateSummary();
+  }
+
+  modelField.addEventListener("change",() => { updateFormats(); interpretPrompt(); });
   for (const field of [ratioField,durationField]) field.addEventListener("change",() => {
+    mismatch = "";
     checked.checked = false;
     updateSummary();
   });
   checked.addEventListener("change",updateSummary);
-  prompt.addEventListener("input",() => {
-    checked.checked = false;
-    updateSummary();
-  });
+  prompt.addEventListener("input",interpretPrompt);
 
   form.addEventListener("submit",async event => {
     event.preventDefault();
     const model = selectedModel();
     const description = prompt.value.trim();
-    if (!enabled || !model || !description || sending || (state.mode === "real" && !checked.checked)) return;
+    if (!enabled || !model || !description || sending || mismatch ||
+        (state.mode === "real" && !model.free && !checked.checked)) return;
     const current = version;
     const errorOutput = $("#generation-error");
     errorOutput.textContent = "";

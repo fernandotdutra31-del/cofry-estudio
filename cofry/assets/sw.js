@@ -1,4 +1,4 @@
-const CACHE = "cofry-studio-v5";
+const CACHE = "cofry-studio-v6";
 const SHELL = ["/studio", "/studio/assets/app.js", "/studio/assets/social.js", "/studio/assets/owner.js", "/studio/assets/generation.js", "/studio/assets/style.css",
   "/studio/assets/icon.png", "/studio/assets/icon-mask.png", "/studio/assets/manifest.webmanifest"];
 self.addEventListener("install", event => {

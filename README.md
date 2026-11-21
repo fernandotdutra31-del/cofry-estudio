@@ -205,6 +205,18 @@ estúdio aceita os cinco modelos listados na tela e divide vídeos longos em cen
 compatíveis com o modelo. O histórico e os arquivos de geração ficam no volume
 configurado no serviço, que é efêmero no plano Render Free.
 
+Escreva o pedido em Imagens e Vídeos, por exemplo, “Crie uma foto vertical de
+São Paulo ao anoitecer”. A tela seleciona o tipo, o formato e a duração
+explicitados quando disponíveis e envia a descrição original ao provedor.
+
+Para usar a franquia de imagens do **Cloudflare Workers AI Free**, configure
+`CLOUDFLARE_ACCOUNT_ID` e `CLOUDFLARE_AI_TOKEN` no servidor. Depois de confirmar
+que a conta está no Workers Free, defina `CLOUDFLARE_WORKERS_FREE=true`.
+O FLUX gera imagens por descrição. O modo **Animação de imagem** acrescenta
+um zoom à imagem gerada e exporta um MP4. A geração de cenas em movimento a
+partir de texto usa a integração fal.ai opcional, que exige a confirmação do
+custo antes de enviar cada pedido.
+
 ### Blueprint do Render
 
 O arquivo `render.yaml` configura uma instância de 2 CPU e 4 GB com disco
