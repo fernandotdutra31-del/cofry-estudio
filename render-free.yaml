@@ -28,3 +28,7 @@ services:
         value: "600"
       - key: STUDIO_USE_S3
         value: "false"
+      - key: ENABLE_URL_DOWNLOAD
+        value: "true"
+      - key: YOUTUBE_CHECK_URL
+        value: https://www.youtube.com/watch?v=BaW_jenozKc

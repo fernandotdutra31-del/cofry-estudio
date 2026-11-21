@@ -119,6 +119,7 @@ def session(request: Request):
         "ok": True,
         "max_mb": settings.max_bytes // 1024**2,
         "youtube": settings.youtube,
+        "youtube_status": settings.youtube_status,
         "modo": "ia" if settings.llm_key else "local",
         "strategy": method,
         "user": {"name": "Proprietário", "email": google_auth.owner_email(), "owner": True},

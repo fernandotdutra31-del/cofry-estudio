@@ -111,6 +111,7 @@ O bucket precisa servir leituras públicas pelo endereço `STORAGE_PUBLIC_BASE_U
 | `STORAGE_PUBLIC_BASE_URL` | Obrigatória. Base HTTPS que já aponta para o bucket público. |
 | `STORAGE_PREFIX` | `cofry`. Prefixo das chaves de saída. |
 | `ENABLE_URL_DOWNLOAD` | `false`. Use `true` para habilitar o YouTube. |
+| `YOUTUBE_CHECK_URL` | Link opcional de uma amostra curta autorizada. Se configurado, o app libera o YouTube somente após confirmar que o servidor consegue baixar essa amostra. |
 | `MAX_VIDEO_MB` | `500`, medido em MiB. |
 | `MAX_VIDEO_SECONDS` | `3600`. Limite superior para a duração. |
 | `PROCESSING_THREADS` | `2`. Threads de CPU destinadas às ferramentas de processamento. |

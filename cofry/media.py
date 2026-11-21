@@ -5,9 +5,12 @@ import subprocess
 import threading
 import time
 from collections import deque
+from copy import copy
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from urllib3.exceptions import HTTPError
 
-from .config import Problem
+from .config import Cancelled, Problem
 from .network import normalize, request, validate, youtube_proxy, youtube_url
 
 LOG = logging.getLogger(__name__)
@@ -32,7 +35,18 @@ def run(args, folder, check, message, timeout=1800):
                     raw = stderr.read(12000).decode(errors="replace").lower()
                     if proc.returncode == -9 or "cannot allocate memory" in raw or "out of memory" in raw:
                         raise Problem("Memória insuficiente para processar este vídeo.")
-                    LOG.warning("%s retornou %s", args[0], proc.returncode)
+                    if args[0] == "yt-dlp":
+                        reasons = (
+                            (("sign in to confirm", "not a bot"), "verificação de acesso exigida pelo YouTube"),
+                            (("403 forbidden", "http error 403"), "acesso recusado"),
+                            (("requested format is not available",), "formato compatível indisponível"),
+                            (("timed out", "unable to connect", "connection refused"), "conexão indisponível"),
+                        )
+                        reason = next((label for phrases, label in reasons if any(p in raw for p in phrases)),
+                                      "falha de extração")
+                        LOG.warning("yt-dlp retornou %s (%s)", proc.returncode, reason)
+                    else:
+                        LOG.warning("%s retornou %s", args[0], proc.returncode)
                     raise Problem(message)
                 stdout.seek(0)
                 return stdout.read(2_000_000)
@@ -42,7 +56,7 @@ def run(args, folder, check, message, timeout=1800):
                     proc.wait()
 
 
-def download(url, folder, settings, check):
+def download(url, folder, settings, check, youtube_timeout=900):
     target = folder / "source.media"
     message = "Não foi possível baixar este link. Envie o arquivo."
     try:
@@ -60,7 +74,7 @@ def download(url, folder, settings, check):
                      "--max-filesize", str(settings.max_bytes),
                      "--match-filter", f"duration <= {settings.max_seconds} & !is_live",
                      "-f", "best[height<=1080][vcodec!=none][acodec!=none]",
-                     "-o", "yt.%(ext)s", "--", youtube_url(url)], folder, limited, message, 900)
+                     "-o", "yt.%(ext)s", "--", youtube_url(url)], folder, limited, message, youtube_timeout)
             files = [file for file in folder.glob("yt.*") if file.is_file()]
             if len(files) != 1:
                 raise Problem(message)
@@ -89,6 +103,33 @@ def download(url, folder, settings, check):
     except (OSError, ValueError, HTTPError) as exc:
         raise Problem(message) from exc
     return target
+
+
+def check_youtube(settings, stop):
+    trial = copy(settings)
+    trial.youtube = True
+    trial.max_bytes = min(settings.max_bytes, 8 * 1024**2)
+    trial.max_seconds = min(settings.max_seconds, 60)
+
+    def check():
+        if stop.is_set():
+            raise Cancelled
+
+    try:
+        with TemporaryDirectory(prefix="task-youtube-check-", dir=settings.data) as directory:
+            asset = download(youtube_url(settings.youtube_check_url), Path(directory), trial, check,
+                             youtube_timeout=55)
+            if not asset.stat().st_size:
+                raise Problem("A amostra do YouTube estava vazia.")
+    except Cancelled:
+        return
+    except Exception as exc:
+        settings.youtube_status = "indisponivel"
+        LOG.warning("Teste do YouTube: indisponível (%s).", type(exc).__name__)
+    else:
+        settings.youtube = True
+        settings.youtube_status = "disponivel"
+        LOG.info("Teste do YouTube: download da amostra confirmado.")
 
 
 def ff(folder, check, threads, *args):

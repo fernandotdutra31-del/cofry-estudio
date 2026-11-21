@@ -313,7 +313,7 @@ function upload(optionsValue, file) {
 }
 
 const rights = $("#video-rights");
-function checkSourceLink(value) {
+async function checkSourceLink(value) {
   let parsed;
   try { parsed = new URL(value); }
   catch { throw new Error("Informe um link HTTPS válido."); }
@@ -322,7 +322,16 @@ function checkSourceLink(value) {
   }
   const host = parsed.hostname.toLowerCase().replace(/\.$/,"");
   if ((host === "youtu.be" || host === "youtube.com" || host.endsWith(".youtube.com")) && !settings?.youtube) {
-    throw new Error("Para este link, envie o arquivo ou use Drive/Dropbox.");
+    const current = await api("/session");
+    settings.youtube = current.youtube;
+    if (current.youtube_status === "verificando") {
+      throw new Error("O servidor está verificando o acesso ao YouTube. Aguarde alguns instantes e tente de novo.");
+    }
+    if (!current.youtube) {
+      throw new Error(current.youtube_status === "indisponivel"
+        ? "Este servidor não conseguiu acessar o YouTube. Você ainda pode colar um link do Drive, Dropbox ou MP4 direto."
+        : "Para este link, envie o arquivo ou use Drive/Dropbox.");
+    }
   }
   return parsed;
 }
@@ -356,7 +365,7 @@ $("#job").addEventListener("submit", async event => {
     let job;
     if (source === "url") {
       const url = $("#url").value.trim();
-      const target = checkSourceLink(url);
+      const target = await checkSourceLink(url);
       job = await api("/projects", {
         method:"POST",headers:{"Content-Type":"application/json","X-Studio-Options":encoded},body:JSON.stringify({url})
       });

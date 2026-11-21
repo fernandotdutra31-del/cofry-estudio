@@ -19,6 +19,8 @@ class Settings:
         self.threads = int(os.getenv("PROCESSING_THREADS", "2"))
         self.studio_s3 = os.getenv("STUDIO_USE_S3", "false").lower() == "true"
         self.youtube = os.getenv("ENABLE_URL_DOWNLOAD", "false").lower() == "true"
+        self.youtube_check_url = os.getenv("YOUTUBE_CHECK_URL", "").strip()
+        self.youtube_status = "disponivel" if self.youtube else "desativado"
         self.api_key = os.getenv("PROCESSING_API_KEY", "")
         self.studio_key = os.getenv("STUDIO_ACCESS_KEY") or self.api_key
         self.studio_cookie_secure = os.getenv("STUDIO_COOKIE_SECURE", "false").lower() == "true"

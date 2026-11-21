@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 
 from .config import Problem, Settings
 from .generation import router as generation_router, worker as generation_worker
+from .media import check_youtube
 from .network import validate
 from .owner import deliver_push, router as owner_router
 from .job_store import Queue
@@ -46,6 +47,10 @@ async def lifespan(app):
         app.state.settings, app.state.queue = settings, queue
         threads = [threading.Thread(target=target, args=(queue, settings, stop), daemon=True)
                    for target in (work, deliver, deliver_push, generation_worker)]
+        if settings.youtube and settings.youtube_check_url:
+            settings.youtube = False
+            settings.youtube_status = "verificando"
+            threads.append(threading.Thread(target=check_youtube, args=(settings, stop), daemon=True))
         for thread in threads:
             thread.start()
         try:
