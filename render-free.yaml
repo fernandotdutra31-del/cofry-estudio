@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: cofry-estudio-gratis
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PROCESSING_API_KEY
+        generateValue: true
+      - key: WEBHOOK_SECRET
+        generateValue: true
+      - key: STUDIO_ACCESS_KEY
+        generateValue: true
+      - key: STUDIO_COOKIE_SECURE
+        value: "true"
+      - key: WHISPER_MODEL
+        value: tiny
+      - key: PROCESSING_THREADS
+        value: "1"
+      - key: OMP_NUM_THREADS
+        value: "1"
+      - key: MALLOC_ARENA_MAX
+        value: "2"
+      - key: MAX_VIDEO_MB
+        value: "60"
+      - key: MAX_VIDEO_SECONDS
+        value: "600"
+      - key: STUDIO_USE_S3
+        value: "false"

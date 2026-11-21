@@ -177,3 +177,17 @@ diretamente do painel. O endereço HTTPS atribuído pelo Render termina em
 Em outros provedores com HTTPS terminado em proxy, use
 `STUDIO_COOKIE_SECURE=true` para exigir HTTPS no cookie de sessão. O padrão
 permite testar o estúdio em HTTP local.
+
+### Prévia gratuita no Render
+
+Para experimentar o estúdio pelo navegador, use o Blueprint `render-free.yaml`.
+Ele usa o plano Free, o Whisper `tiny` e a seleção pela própria fala, sem
+chave de IA externa ou credenciais S3. A chave do estúdio é gerada pelo Render
+como `STUDIO_ACCESS_KEY`. Acesse `/studio` no endereço HTTPS do serviço e use
+essa chave. O limite configurado por vídeo é de 60 MiB e 10 minutos.
+
+O Render Free suspende serviços ociosos e apaga alterações do disco ao
+suspender, reiniciar ou reimplantar. Salve seus cortes antes de sair. Essa
+configuração tem fila, originais e cortes locais enquanto a instância está
+ativa. A API `/jobs` continua exigindo as integrações de IA e S3. Para a
+configuração com disco persistente, use o Blueprint `render.yaml`.
