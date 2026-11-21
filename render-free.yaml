@@ -23,7 +23,7 @@ services:
       - key: MALLOC_ARENA_MAX
         value: "2"
       - key: MAX_VIDEO_MB
-        value: "60"
+        value: "600"
       - key: MAX_VIDEO_SECONDS
         value: "600"
       - key: STUDIO_USE_S3

@@ -224,7 +224,8 @@ Para experimentar o estúdio pelo navegador, use o Blueprint `render-free.yaml`.
 Ele usa o plano Free, o Whisper `tiny` e a seleção pela própria fala, sem
 chave de IA externa ou credenciais S3. A chave do estúdio é gerada pelo Render
 como `STUDIO_ACCESS_KEY`. Acesse `/studio` no endereço HTTPS do serviço e use
-essa chave. O limite configurado por vídeo é de 60 MiB e 10 minutos.
+essa chave. O limite configurado por vídeo é de 600 MiB e 10 minutos.
+Para arquivos grandes, prefira colar o link público do Drive ou Dropbox.
 
 O Render Free suspende serviços ociosos e apaga alterações do disco ao
 suspender, reiniciar ou reimplantar. Salve seus cortes antes de sair. Essa
